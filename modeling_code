@@ -1,0 +1,299 @@
+Data$Time
+
+Lsales = log(Data$Sales)
+
+##########################################
+#Finding The Trend
+###########################################
+
+#linear
+reg = lm(Lsales~Data$Time)
+summary(reg)
+plot.ts(Lsales, main = "Log Auto Sales")
+abline(reg, col = "blue")
+BIC(reg)
+
+#Quadtratic 
+time_squared = Data$Time * Data$Time
+reg_quad = lm(Lsales~Data$Time + time_squared)
+estimate_quad = 6.537 -.0002937*Data$Time -.000001269*time_squared
+x_quad = ts(estimate_quad)
+y_quad = ts(log(Data$Sales))
+#Blue is estimate, Black is actual
+ts.plot(y_quad,x_quad, gpars = list(col = c("black", "blue")), ylab = "Lsales", main = "Log Auto Sales")
+BIC(reg_quad)
+
+
+#Monthly Dummies
+Jan = c(1,0,0,0,0,0,0,0,0,0,0,0)
+Jan = rep(Jan,52)
+Jan = append(Jan,c(1,0))
+
+Feb = c(0,1,0,0,0,0,0,0,0,0,0,0)
+Feb = rep(Feb, 52)
+Feb = append(Feb, c(0,1))
+
+March = c(0,0,1,0,0,0,0,0,0,0,0,0)
+March = rep(March,52)
+March = append(March,c(0,0))
+
+April = c(0,0,0,1,0,0,0,0,0,0,0,0)
+April = rep(April,52)
+April = append(April,c(0,0))
+
+May = c(0,0,0,0,1,0,0,0,0,0,0,0)
+May = rep(May,52)
+May = append(May,c(0,0))
+
+June =c(0,0,0,0,0,1,0,0,0,0,0,0)
+June = rep(June,52)
+June= append(June,c(0,0))
+
+July = c(0,0,0,0,0,0,1,0,0,0,0,0)
+July = rep(July,52)
+July= append(July,c(0,0))
+
+August = c(0,0,0,0,0,0,0,1,0,0,0,0)
+August = rep(August,52)
+August= append(August,c(0,0))
+
+September = c(0,0,0,0,0,0,0,0,1,0,0,0)
+September = rep(September,52)
+September = append(September,c(0,0))
+
+October = c(0,0,0,0,0,0,0,0,0,1,0,0)
+October = rep(October,52)
+October= append(October,c(0,0))
+
+November = c(0,0,0,0,0,0,0,0,0,0,1,0)
+November = rep(November,52)
+November= append(November,c(0,0))
+
+December = c(0,0,0,0,0,0,0,0,0,0,0,1)
+December = rep(December,52)
+December = append(December,c(0,0))
+
+
+#Linear Regression with Monthly Dummies
+library('tseries')
+
+reg1 = lm(log(Data$Sales)~Data$Time + Jan + Feb + March + April + May + June + July + August + September + October + November + December + 0)
+summary(reg1)
+estimate = -0.001084*Data$Time + Jan*6.429698 + Feb*6.550034 + March*6.737400 + April*6.677037 + May*6.760559 + 6.731864*June + 6.640816*July + 6.635890*August + 6.590283*September + 6.624152*October +6.514533*November + 6.536208*December 
+x = ts(estimate)
+y = ts(log(Data$Sales))
+#Blue is estimate, Black is actual
+ts.plot(y,x, gpars = list(col = c("black", "blue")), ylab = "Lsales", main = "Log Auto Sales")
+BIC(reg1)
+
+
+
+
+#Quadratic Regression with Monthly Dummies
+reg2 = lm(log(Data$Sales)~Data$Time + time_squared + Jan + Feb + March + April + May + June + July + August + September + October + November + December + 0)
+summary(reg2)
+estimate2 = -.0003086*Data$Time -.000001237*time_squared + Jan*6.350 + Feb*6.470 + March*6.656 + April*6.596 + May*6.679 + 6.650*June + 6.559*July + 6.554*August + 6.509*September + 6.543*October +6.433*November + 6.455*December 
+x2 = ts(estimate2)
+y2 = ts(log(Data$Sales))
+#Blue is estimate, Black is actual
+ts.plot(y2,x2, gpars = list(col = c("black", "blue")), ylab = "Lsales", main = "Log Auto Sales")
+
+BIC(reg2)
+
+
+##################################################
+#Autocorrelation Detection
+##################################################
+
+#Residuals plot
+resid <- estimate2 - Lsales
+ts.plot(resid)
+
+#Autocorrelation
+plot(acf(resid, lag.max = 10, plot = FALSE), main = "Autocorrelation")
+
+#partial autocorrelation
+plot(pacf(resid, lag.max = 10), main = "Partial Autocorrelation")
+
+
+install.packages("lmtest") 
+library(lmtest) 
+#Durbin Watson Test
+dwtest(reg2) 
+
+#BP Test
+bgtest(reg2, order = 6) 
+
+
+##################################################
+#AR Processes
+##################################################
+
+##AR(1) Process
+reg3 = lm(Lsales[2:626]~Data$Time[2:626] + time_squared[2:626] + Jan[2:626] + Feb[2:626] + March[2:626] + April[2:626] + May[2:626] + June[2:626] + July[2:626] + August[2:626] + September[2:626] + October[2:626] + November[2:626] + December[2:626] + Lsales[1:625] + 0)
+summary(reg3)
+estimate3 = -.00007703*(Data$Time[2:626]) - .0000003212*time_squared[2:626] + 1.534*Jan[2:626] + 1.732*Feb[2:626] + 1.827*March[2:626] + 1.629*April[2:626] + 1.758*May[2:626] + 1.667*June[2:626] + 1.597*July[2:626] + 1.660*August[2:626] + 1.618*September[2:626] + 1.686*October[2:626] +1.551*November[2:626] + 1.655*December[2:626]+.7461*Lsales[1:625] 
+x3 = ts(estimate3)
+ts.plot(x3)
+y3 = ts(log(Data$Sales))
+ts.plot(y3,x3, gpars = list(col = c("black", "blue")))
+BIC(reg3)
+
+##AR(1) Process without linear dependent variable time
+reg3 = lm(Lsales[2:626]~time_squared[2:626] + Jan[2:626] + Feb[2:626] + March[2:626] + April[2:626] + May[2:626] + June[2:626] + July[2:626] + August[2:626] + September[2:626] + October[2:626] + November[2:626] + December[2:626] + Lsales[1:625] + 0)
+summary(reg3)
+BIC(reg3)
+
+
+##AR(2) Process
+reg4 = lm(Lsales[3:626]~time_squared[3:626] + Jan[3:626] + Feb[3:626] + March[3:626] + April[3:626] + May[3:626] + June[3:626] + July[3:626] + August[3:626] + September[3:626] + October[3:626] + November[3:626] + December[3:626] + Lsales[1:624] + Lsales[2:625] + 0)
+summary(reg4)
+BIC(reg4)
+
+##AR(3) Process
+reg5 = lm(Lsales[4:626]~time_squared[4:626] + Jan[4:626] + Feb[4:626] + March[4:626] + April[4:626] + May[4:626] + June[4:626] + July[4:626] + August[4:626] + September[4:626] + October[4:626] + November[4:626] + December[4:626] + Lsales[1:623] + Lsales[2:624] + Lsales[3:625] + 0)
+summary(reg5)
+BIC(reg5)
+
+##AR(4) Process
+reg6 = lm(Lsales[5:626]~Data$Time[5:626]+ Jan[5:626] + Feb[5:626] + March[5:626] + April[5:626] + May[5:626] + June[5:626] + July[5:626] + August[5:626] + September[5:626] + October[5:626] + November[5:626] + December[5:626] + Lsales[1:622] + Lsales[2:623] + Lsales[3:624] + Lsales[4:625] + 0)
+summary(reg6)
+estimate6 <-.0001412*Data$Time[5:626] + .6629*Jan[5:626] + .8618*Feb[5:626] +  .9882*March[5:626] + .8476*April[5:626] + .9594*May[5:626] + .8279*June[5:626] + .7381*July[5:626] + .7740*August[5:626] + .7221*September[5:626] + .8036*October[5:626] + .6898*November[5:626] + .7815*December[5:626] + .1546*Lsales[1:622] + .2047*Lsales[2:623] -.02081*Lsales[3:624] + .5401*Lsales[4:625]
+x6 = ts(estimate6)
+ts.plot(x6)
+y6 = ts(log(Data$Sales))
+ts.plot(y6,x6, gpars = list(col = c("black", "blue")), ylab = "Lsales", main = "Log Auto Sales (4 Lags)")
+BIC(reg6)
+
+#AR(5) Process
+reg7 = lm(Lsales[6:626]~time_squared[6:626] + Jan[6:626] + Feb[6:626] + March[6:626] + April[6:626] + May[6:626] + June[6:626] + July[6:626] + August[6:626] + September[6:626] + October[6:626] + November[6:626] + December[6:626] + Lsales[1:621] + Lsales[2:622] + Lsales[3:623] + Lsales[4:624] + Lsales[5:625] + 0)
+summary(reg7)
+BIC(reg7)
+
+##AR(6) Process
+reg8 = lm(Lsales[7:626]~time_squared[7:626] + Jan[7:626] + Feb[7:626] + March[7:626] + April[7:626] + May[7:626] + June[7:626] + July[7:626] + August[7:626] + September[7:626] + October[7:626] + November[7:626] + December[7:626] + Lsales[1:620] + Lsales[2:621] + Lsales[3:622] + Lsales[4:623] + Lsales[5:624] + Lsales[6:625]+ 0)
+summary(reg8)
+BIC(reg8)
+
+##AR(7) Process
+reg9 = lm(Lsales[8:626]~time_squared[8:626] + Jan[8:626] + Feb[8:626] + March[8:626] + April[8:626] + May[8:626] + June[8:626] + July[8:626] + August[8:626] + September[8:626] + October[8:626] + November[8:626] + December[8:626] + Lsales[1:619] + Lsales[2:620] + Lsales[3:621] + Lsales[4:622] + Lsales[5:623] + Lsales[6:624]+ Lsales[7:625]+ 0)
+summary(reg9)
+BIC(reg9)
+
+
+###################################################
+#Point, interval, and density Forecasting
+####################################################
+
+#point forecast for march
+march_predict <-.0001412*627 +  .9882+ .1528*Lsales[623] + .2032*Lsales[624] -.02157*Lsales[625] + .5392*Lsales[626]
+march_predict
+
+#Interval forecast for march
+residual_error = 0.09969
+CI_l<-march_predict-residual_error*qnorm(0.975)
+CI_u<-march_predict+residual_error*qnorm(0.975)
+print(c(CI_l,CI_u))
+
+#Density Forecast for march
+draws = rnorm(1000, march_predict, residual_error)
+figure = density(draws)
+plot(figure, main = "Density Prediction for March", xlab= "Log Auto Sales")
+
+
+###################################################
+#Testing for Non-Normality, structural break, heteroskedasticity
+####################################################
+
+
+
+
+#Finding the Structural Break
+#MaxChow Test
+library('strucchange')
+Lsales = Lsales[5:626]
+RegMat <- data.frame(cbind(Lsales), colnames = "Lsales")
+F_values <- Fstats(reg6, from = 0.15, data = RegMat)
+plot(F_values$Fstats)
+breakpoint <- breakpoints(F_values) 
+lines(breakpoints(F_values))
+print(breakpoint)
+Lsales = log(Data$Sales)
+
+#Determining the Updated Model
+
+
+
+
+
+
+#Checking for Non-Normality
+hist(reg16$residuals)
+jarque.bera.test(reg6$residuals) #Reject Null Hypothesis
+
+
+
+#New Point Prediction
+new_march_predict =
+  627*(-.0001998) +
+  1.085 + .2244*Lsales[624] + .05504*Lsales[625] + 0.587*Lsales[626]
+new_march_predict
+
+
+#Density Prediction Changes
+resid_lm <- reg16$residuals
+R <- 1000
+eDraws <- sample(resid_lm, R, replace = T)
+densityFig <- density(new_march_predict + eDraws)
+plot(densityFig, main = "Updated Density Prediction for Log March Sales", xlab = "Log Sales")
+
+#Intervel Prediction
+quantile((new_march_predict + eDraws), c(0.025,0.975))
+
+
+#Checking for Heteroskedasticity QQPLOT
+qqnorm(reg6$residuals)
+qqline(reg6$residuals)
+#BP Test Math Score
+library(lmtest);
+bptest(reg6, data=Lsales)
+
+
+#Garch Testing
+install.packages("fGarch")
+library("fGarch")
+
+#Plug in residuals 
+g.n = garchFit(formula = ~ garch(1, 1), data = reg16$resid, trace = FALSE)
+summary(g.n)
+predict(g.n)
+g.n@sigma.t
+
+###################################################
+#Extending Point, Interval, Density to September
+####################################################
+
+new_march_predict =
+  627*(-0.0001732) +
+  0.9599794 + 0.1495282*Lsales[623] + 0.1333657*Lsales[624] + 0.0486279*Lsales[625] + 0.5556844*Lsales[626]
+
+new_march_predict
+new_april = 628*(-0.0001998 ) + 0.9407993 + 0.2244401*Lsales[625] + 0.0550441*Lsales[626] + 0.5870247*new_march_predict
+new_may = 629*(-0.0001998 ) + 1.0324796 + 0.2244401*Lsales[626] + 0.0550441*new_march_predict + 0.5870247*new_april
+new_june = 630*(-0.0001998 ) + 0.9014536 + 0.2244401*new_march_predict + 0.0550441*new_april + 0.5870247*new_may
+new_july = 631*(-0.0001998 ) + 0.8495613 + 0.2244401*new_april + 0.0550441*new_may + 0.5870247*new_june
+new_august = 632*(-0.0001998 ) + 0.9232982 + 0.2244401*new_may + 0.0550441*new_june + 0.5870247*new_july
+new_september = 633*(-0.0001998 ) + 0.8334639 + 0.2244401*new_june + 0.0550441*new_july + 0.5870247*new_august
+new_september
+
+
+#Density Prediction Changes
+resid_lm <- reg16$residuals
+R <- 1000
+eDraws <- sample(resid_lm, R, replace = T)
+densityFig <- density(new_september + eDraws)
+plot(densityFig, main = "Density Prediction for Log September Sales", xlab = "Log Sales")
+
+
+#Intervel Prediction
+quantile((new_september + eDraws), c(0.025,0.975))
